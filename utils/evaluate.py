@@ -178,7 +178,7 @@ def train(GJ_model, data, update_label, sample_weight, learning_rate=1e-3, num_i
                 ece_calibration_sample(majo_prob, majo_result, majo_label, 20)
                 ece_calibration_sample(mino_prob, mino_result, mino_label, 20)
 
-def test_gcn(model, data):
+def test_gcn(model, data, update_label):
     out = model(data.x, data.edge_index)
     #detailed_out = out.tolist()
     #print("len of detailed_out: {}".format(len(detailed_out)))
@@ -193,12 +193,10 @@ def test_gcn(model, data):
     val_recall = recall_score(update_label[data.val_mask].tolist(), pred[data.val_mask].tolist())
 
     f1_macro = f1_score(update_label[data.test_mask].tolist(), pred[data.test_mask].tolist(), average='macro')
-    f1_micro = f1_score(update_label[data.test_mask].tolist(), pred[data.test_mask].tolist(), average='micro')
-    f1 = f1_score(update_label[data.test_mask].tolist(), pred[data.test_mask].tolist(), average=None)
 
-    return train_acc, test_acc, val_acc, train_recall, test_recall, val_recall, f1_macro, f1_micro, f1, out, pred, update_label
+    return train_acc, test_acc, val_acc, train_recall, test_recall, val_recall, f1_macro, out, pred, update_label
 
-def test(model, data):
+def test(model, data, update_label):
     out = model.predict(data)
     #detailed_out = out.tolist()
     #print("len of detailed_out: {}".format(len(detailed_out)))
@@ -213,7 +211,5 @@ def test(model, data):
     val_recall = recall_score(update_label[data.val_mask].tolist(), pred[data.val_mask].tolist())
 
     f1_macro = f1_score(update_label[data.test_mask].tolist(), pred[data.test_mask].tolist(), average='macro')
-    f1_micro = f1_score(update_label[data.test_mask].tolist(), pred[data.test_mask].tolist(), average='micro')
-    f1 = f1_score(update_label[data.test_mask].tolist(), pred[data.test_mask].tolist(), average=None)
 
-    return train_acc, test_acc, val_acc, train_recall, test_recall, val_recall, f1_macro, f1_micro, f1, out, pred, update_label
+    return train_acc, test_acc, val_acc, train_recall, test_recall, val_recall, f1_macro, out, pred, update_label

@@ -118,7 +118,7 @@ def main(args):
     print("training starts..")
     GCN_model_16.fit(data, update_label, weights_16_1, num_iter=2000)
 
-    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, f1_micro, f1, out, pred, update_label = test_gcn(GCN_model_16.model, data)
+    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, out, pred, update_label = test_gcn(GCN_model_16.model, data, update_label)
     print()
     print(f'Train Accuracy: {train_acc:.4f} \t Test Accuracy: {test_acc:.4f} \t Valid Accuracy: {val_acc:.4f} \n'
           f'Train Recall: {train_rec:.4f} \t Test Recall: {test_rec:.4f} \t Valid Recall: {val_rec:.4f} \n'
@@ -142,7 +142,7 @@ def main(args):
     print("training with individual calibration..")
     train(GJ_model_16, data, update_label, weights_16_1, learning_rate=1e-3, num_iter=200, alpha=args.lam)
 
-    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, f1_micro, f1, out, pred, update_label = test(GJ_model_16.model, data)
+    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, out, pred, update_label = test(GJ_model_16.model, data, update_label)
     print()
     print(f'Train Accuracy: {train_acc:.4f} \t Test Accuracy: {test_acc:.4f} \t Valid Accuracy: {val_acc:.4f} \n'
           f'Train Recall: {train_rec:.4f} \t Test Recall: {test_rec:.4f} \t Valid Recall: {val_rec:.4f} \n'
