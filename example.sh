@@ -1,0 +1,1 @@
+python main.py --dataset Cora -minority_label 0 -weight 5.4 -seed 100 -added_label_rate 10 -alpha 0.9 -lam 0.1
