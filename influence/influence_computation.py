@@ -160,8 +160,9 @@ def exact_influence_gcn(model, train_index, damp=0):
     #if W is None:
     # W is None
     y_preds = [model.predict(model.data)[k] for k in train_index]
-    losses = [model.loss_fn(y_preds[k], model.y[train_index[k]]) for k in range(len(train_index))]
-    n_factor = model.X.shape[0]
+    losses   = [model.loss_fn(torch.unsqueeze(y_preds[k], 0), torch.unsqueeze(model.y[k],0)) for k in range(len(train_index))]
+    n_factor = len(train_index)
+    print("n factor is:{}".format(n_factor))
 
     grads = [stack_torch_tensors(torch.autograd.grad(losses[k], model.parameters(), create_graph=True)) for k in range(len(losses))]
     IFs_ = [-1 * torch.mm(Hinv, grads[k].reshape((grads[k].shape[0], 1))) / n_factor for k in range(len(grads))]

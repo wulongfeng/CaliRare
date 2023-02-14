@@ -116,7 +116,7 @@ def main(args):
     GCN_model_16 = GCN(**params)
 
     print("training starts..")
-    GCN_model_16.fit(data, update_label, weights_16_1, num_iter=2000)
+    GCN_model_16.fit(data, update_label, weights_16_1, num_iter=200)
 
     train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, out, pred, update_label = test_gcn(GCN_model_16.model, data, update_label)
     print()
