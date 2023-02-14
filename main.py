@@ -37,14 +37,6 @@ def parse_args(args=None):
     return parser.parse_args(args)
 
 def main(args):
-    print("dataset:{}, type:{}".format(args.dataset, type(args.dataset)))
-    print("weight:{}, type:{}".format(args.weight, type(args.weight)))
-    print("minority_label:{}, type:{}".format(args.minority_label, type(args.minority_label)))
-    print("seed:{}, type:{}".format(args.seed, type(args.seed)))
-    print("added_label_rate:{}, type:{}".format(args.added_label_rate, type(args.added_label_rate)))
-    print("alpha:{}, type:{}".format(args.alpha, type(args.alpha)))
-    print("lam:{}, type:{}".format(args.lam, type(args.lam)))
-
     if args.dataset in ['Cora', 'PubMed', 'CiteSeer']:
         dataset = Planetoid(root='data/Planetoid', name=args.dataset, transform=NormalizeFeatures())
     elif args.dataset == 'DBLP':
@@ -53,7 +45,7 @@ def main(args):
         dataset = FacebookPagePage(root='data/FacebookPagePage', transform=NormalizeFeatures())
     elif args.dataset == 'Amazon_Photo':
         dataset = Amazon(root='data_torch1.4/Amazon_photo', name='Photo', transform=NormalizeFeatures())
-
+    
     print(50*'=')
     data = dataset[0]
     print(data)
@@ -137,8 +129,6 @@ def main(args):
           f'ACE on the minority: {ace_mino:.4f}')
 
     GJ_model_16 = GCN_uncertainty_wrapper(GCN_model_16, order=1, damp=1e-2)
-    #y_label_test, y_prob_test, y_pred_label_test, y_lower_test, y_upper_test, y_label_valid, y_prob_valid, y_pred_label_valid, y_lower_valid, y_upper_valid = GJ_model_16.predict(data, update_label, coverage=args.alpha)
-    
     print()
     print("training with individual calibration..")
     train(GJ_model_16, data, update_label, weights_16_1, learning_rate=1e-3, num_iter=200, alpha=args.lam)
