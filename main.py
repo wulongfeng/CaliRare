@@ -45,7 +45,7 @@ def main(args):
         dataset = FacebookPagePage(root='data/FacebookPagePage', transform=NormalizeFeatures())
     elif args.dataset == 'Amazon_Photo':
         dataset = Amazon(root='data_torch1.4/Amazon_photo', name='Photo', transform=NormalizeFeatures())
-    
+
     print(50*'=')
     data = dataset[0]
     print(data)
@@ -99,18 +99,18 @@ def main(args):
     weights = torch.tensor([args.weight, 1], dtype=torch.float32)
     weights = 1.0 / weights
     final_weights = weights / weights.sum()
-    weights_16_1 = torch.FloatTensor(final_weights)
-    print("weight:{}".format(weights_16_1))
+    final_weights = torch.FloatTensor(final_weights)
+    print("weight:{}".format(final_weights))
 
     num_fea = data.num_features
     print(num_fea)
     params = dict({"hidden_channels": 16, "num_features": num_fea})
-    GCN_model_16 = GCN(**params)
+    GCN_model = GCN(**params)
 
     print("training starts..")
-    GCN_model_16.fit(data, update_label, weights_16_1, num_iter=2000)
+    GCN_model.fit(data, update_label, final_weights, num_iter=2000)
 
-    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, out, pred, update_label = test_gcn(GCN_model_16.model, data, update_label)
+    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, out, pred, update_label = test_gcn(GCN_model.model, data, update_label)
     print()
     print(f'Train Accuracy: {train_acc:.4f} \t Test Accuracy: {test_acc:.4f} \t Valid Accuracy: {val_acc:.4f} \n'
           f'Train Recall: {train_rec:.4f} \t Test Recall: {test_rec:.4f} \t Valid Recall: {val_rec:.4f} \n'
@@ -128,12 +128,12 @@ def main(args):
     print(f'ECE: {ece:.4f} \t ACE: {ace:.4f} \t ACE on the majority: {ace_majo:.4f} \t '
           f'ACE on the minority: {ace_mino:.4f}')
 
-    GJ_model_16 = GCN_uncertainty_wrapper(GCN_model_16, order=1, damp=1e-2)
+    GJ_model = GCN_uncertainty_wrapper(GCN_model, order=1, damp=1e-2)
     print()
     print("training with individual calibration..")
-    train(GJ_model_16, data, update_label, weights_16_1, learning_rate=1e-3, num_iter=200, alpha=args.lam)
+    train(GJ_model, data, update_label, final_weights, learning_rate=1e-3, num_iter=200, alpha=args.lam)
 
-    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, out, pred, update_label = test(GJ_model_16.model, data, update_label)
+    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, out, pred, update_label = test(GJ_model.model, data, update_label)
     print()
     print(f'Train Accuracy: {train_acc:.4f} \t Test Accuracy: {test_acc:.4f} \t Valid Accuracy: {val_acc:.4f} \n'
           f'Train Recall: {train_rec:.4f} \t Test Recall: {test_rec:.4f} \t Valid Recall: {val_rec:.4f} \n'
