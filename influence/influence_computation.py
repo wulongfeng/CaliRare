@@ -34,19 +34,12 @@ def influence_function(model,
     Computes the influence function defined as H^-1 dLoss/d theta. This is the impact that each
     training data point has on the learned model parameters. 
     """
-    
-    if mode=="stochastic":
-
+    if mode == "stochastic":
         IF = influence_stochastic_estimation(model, train_index, batch_size, damp, scale, recursion_depth)
-
-    if mode=="exact":    
-
+    if mode == "exact":
         IF = exact_influence(model, train_index, damp, W, order)
-
-    if mode=="exact_gcn":
-
+    if mode == "exact_gcn":
         IF = exact_influence_gcn(model, train_index, damp)
-
     return IF    
 
 
@@ -157,32 +150,21 @@ def exact_influence(model, train_index, damp=0, W=None, order=1):
 
 
 
-
-
 def exact_influence_gcn(model, train_index, damp=0):
-
     params_ = []
-
     for param in model.parameters():
-
         params_.append(param)
-
     num_par = stack_torch_tensors(params_).shape[0]
     Hinv    = torch.inverse(exact_hessian(model) + damp * torch.eye(num_par))
 
-
-
     #if W is None:
     # W is None
-
     y_preds = [model.predict(model.data)[k] for k in train_index]
-
-    losses   = [model.loss_fn(y_preds[k], model.y[train_index[k]]) for k in range(len(train_index))]
+    losses = [model.loss_fn(y_preds[k], model.y[train_index[k]]) for k in range(len(train_index))]
     n_factor = model.X.shape[0]
 
-    grads   = [stack_torch_tensors(torch.autograd.grad(losses[k], model.parameters(), create_graph=True)) for k in range(len(losses))]
-
-    IFs_  = [-1 * torch.mm(Hinv, grads[k].reshape((grads[k].shape[0], 1))) / n_factor for k in range(len(grads))]
+    grads = [stack_torch_tensors(torch.autograd.grad(losses[k], model.parameters(), create_graph=True)) for k in range(len(losses))]
+    IFs_ = [-1 * torch.mm(Hinv, grads[k].reshape((grads[k].shape[0], 1))) / n_factor for k in range(len(grads))]
 
     return IFs_
 

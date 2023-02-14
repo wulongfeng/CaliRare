@@ -4,8 +4,7 @@ from torch.nn import Linear
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv #GATConv
 import math
-import matplotlib.pyplot as plt
-#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+import numpy as np
 
 from torch_geometric.datasets import Planetoid, CitationFull, FacebookPagePage, Amazon
 from torch_geometric.transforms import NormalizeFeatures
@@ -162,22 +161,22 @@ def train(GJ_model, data, update_label, sample_weight, learning_rate=1e-3, num_i
             print(f'Epoch: {epoch:03d}, Original loss: {valid_loss_cn:.4f}, Uncertainty Loss: {loss_uncertainty:.4f}, integrated Loss: {loss:.4f}')
 
             if epoch >= 500:
-                train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, f1_micro, f1, out, pred, update_label = test(GJ_model_16.model,data)
+                train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, out, pred, update_label = test(GJ_model.model, data, update_label)
                 print()
-                print(f'Train Accuracy: {train_acc:.4f} \t Test Accuracy: {test_acc:.4f} \t Valid Accuracy: {val_acc:.4f}')
-                print(f'Train Recall: {train_rec:.4f} \t Test Recall: {test_rec:.4f} \t Valid Recall: {val_rec:.4f}')
-                print(f'Test Macro F1: {f1_macro:.4f} \t Test Micro F1: {f1_micro:.4f} ')
-                print("F1:{}".format(f1))
+                print(f'Train Accuracy: {train_acc:.4f} \t Test Accuracy: {test_acc:.4f} \t Valid Accuracy: {val_acc:.4f} \n'
+                      f'Train Recall: {train_rec:.4f} \t Test Recall: {test_rec:.4f} \t Valid Recall: {val_rec:.4f} \n'
+                      f'Test Macro F1: {f1_macro:.4f}')
 
                 model_result = out[data.test_mask].tolist()
                 model_argmax = pred[data.test_mask].tolist()
                 label = update_label[data.test_mask].tolist()
                 majo_prob, majo_result, majo_label, mino_prob, mino_result, mino_label = splitCate(model_result, model_argmax, label)
 
-                ece_calibration_interval(model_result, model_argmax, label, 20)
-                ece_calibration_sample(model_result, model_argmax, label, 20)
-                ece_calibration_sample(majo_prob, majo_result, majo_label, 20)
-                ece_calibration_sample(mino_prob, mino_result, mino_label, 20)
+                ece = ece_calibration(model_result, model_argmax, label, 20)
+                ace = ace_calibration(model_result, model_argmax, label, 20)
+                ace_majo = ace_calibration(majo_prob, majo_result, majo_label, 20)
+                ace_mino = ace_calibration(mino_prob, mino_result, mino_label, 20)
+                print(f'ECE: {ece:.4f} \t ACE: {ace:.4f} \t ACE on the majority: {ace_majo:.4f} \t ACE on the minority: {ace_mino:.4f}')
 
 def test_gcn(model, data, update_label):
     out = model(data.x, data.edge_index)

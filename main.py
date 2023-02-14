@@ -138,6 +138,25 @@ def main(args):
 
     GJ_model_16 = GCN_uncertainty_wrapper(GCN_model_16, order=1, damp=1e-2)
     y_label_test, y_prob_test, y_pred_label_test, y_lower_test, y_upper_test, y_label_valid, y_prob_valid, y_pred_label_valid, y_lower_valid, y_upper_valid = GJ_model_16.predict(data, update_label, coverage=args.alpha)
+    train_acc, test_acc, val_acc, train_rec, test_rec, val_rec, f1_macro, f1_micro, f1, out, pred, update_label = test(GJ_model_16.model, data, update_label)
+    print()
+    print(f'Train Accuracy: {train_acc:.4f} \t Test Accuracy: {test_acc:.4f} \t Valid Accuracy: {val_acc:.4f}')
+    print(f'Train Recall: {train_rec:.4f} \t Test Recall: {test_rec:.4f} \t Valid Recall: {val_rec:.4f}')
+    print(f'Test Macro F1: {f1_macro:.4f} \t Test Micro F1: {f1_micro:.4f} ')
+    print("F1:{}".format(f1))
+
+    model_result = out[data.test_mask].tolist()
+    model_argmax = pred[data.test_mask].tolist()
+    label = update_label[data.test_mask].tolist()
+    majo_prob, majo_result, majo_label, mino_prob, mino_result, mino_label = splitCate(model_result, model_argmax, label)
+
+    ece = ece_calibration(model_result, model_argmax, label, 20)
+    ace = ace_calibration(model_result, model_argmax, label, 20)
+    ace_majo = ace_calibration(majo_prob, majo_result, majo_label, 20)
+    ace_mino = ace_calibration(mino_prob, mino_result, mino_label, 20)
+    print(f'ECE: {ece:.4f} \t ACE: {ace:.4f} \t ACE on the majority: {ace_majo:.4f} \t '
+          f'ACE on the minority: {ace_mino:.4f}')
+
     print()
     print("training with individual calibration..")
     train(GJ_model_16, data, update_label, weights_16_1, learning_rate=1e-3, num_iter=200, alpha=args.lam)

@@ -375,86 +375,6 @@ class GCN_base(torch.nn.Module):
         x = F.softmax(x, dim=1)
         return x
 
-class GCN_data_base(torch.nn.Module):
-    def __init__(self, hidden_channels, num_features, adj, fea):
-        super(GCN_data_base, self).__init__()
-        self.hidden_channels = hidden_channels
-        self.num_features = num_features
-        #self.conv1 = GCNConv(data.num_features, hidden_channels)
-        self.conv1 = GCNConv(num_features, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, 2)
-
-        self.adj = adj
-        self.fea = fea
-
-    def forward(self, fea, adj):
-        # First Message Passing Layer (Transformation)
-        x = self.conv1(fea, adj)
-        x = x.relu()
-        x = F.dropout(x, p=0.5, training=self.training)
-
-        # Second Message Passing Layer
-        x = self.conv2(x, adj)
-        x = F.softmax(x, dim=1)
-        return x
-
-class GAT_base(torch.nn.Module):
-    def __init__(self, hidden_channels, num_features):
-        super(GAT_base, self).__init__()
-        self.hidden_channels = hidden_channels
-        self.num_features = num_features
-        #self.conv1 = GCNConv(data.num_features, hidden_channels)
-        self.conv1 = GATConv(num_features, hidden_channels)
-        self.conv2 = GATConv(hidden_channels, 2)
-
-    def forward(self, x, edge_index):
-        # First Message Passing Layer (Transformation)
-        x = self.conv1(x, edge_index)
-        x = x.relu()
-        x = F.dropout(x, p=0.8, training=self.training)
-
-        # Second Message Passing Layer
-        x = self.conv2(x, edge_index)
-        x = F.softmax(x, dim=1)
-        return x
-
-
-class GIN_base(torch.nn.Module):
-    def __init__(self, hidden, num_features):
-        super(GIN_base, self).__init__()
-        self.hidden = hidden
-        self.num_features = num_features
-        self.conv1 = GINConv(Sequential(
-            Linear(num_features, hidden),
-            ReLU(),
-            Linear(hidden, hidden),
-            ReLU(),
-            BN(hidden),
-        ), train_eps=True)
-        self.convs = torch.nn.ModuleList()
-
-        self.convs.append(
-            GINConv(Sequential(
-                Linear(hidden, hidden),
-                ReLU(),
-                Linear(hidden, hidden),
-                ReLU(),
-                BN(hidden),
-            ),   train_eps=True))
-        self.lin1 = Linear(hidden, hidden)
-        self.lin2 = Linear(hidden, 2)
-
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        for conv in self.convs:
-            x = conv(x, edge_index)
-        x = F.relu(self.lin1(x))
-        x = F.dropout(x, p=0.5, training=self.training)
-        x = self.lin2(x)
-        #return F.log_softmax(x, dim=-1)
-        return F.softmax(x, dim=1)
-
-
 class GCN(torch.nn.Module):
     def __init__(self, hidden_channels, num_features):
         super(GCN, self).__init__()
@@ -519,223 +439,22 @@ class GCN(torch.nn.Module):
         self.loss = self.loss_fn(self.predict(self.data), self.y)
 
 
-class GCN_data(torch.nn.Module):
-    def __init__(self, hidden_channels, num_features, adj, fea, label, train_mask, test_mask, val_mask):
-        super(GCN_data, self).__init__()
-        self.hidden_channels = hidden_channels
-        self.num_features = num_features
-
-        self.adj = adj
-        self.fea = fea
-        self.label = label
-        self.train_mask = train_mask
-        self.test_mask = test_mask
-        self.val_mask = val_mask
-        self.model = GCN_data_base(self.hidden_channels, self.num_features, self.adj, self.fea)
-
-    def fit(self, weight, learning_rate=1e-3, num_iter=50):
-        self.y         = self.label[self.train_mask]
-        self.weight    = weight
-        self.loss_fn   = torch.nn.CrossEntropyLoss(weight=self.weight)
-        self.decay     = 5e-4
-        optimizer = torch.optim.Adam(self.model.parameters(),
-                                     lr=learning_rate,
-                                     weight_decay=self.decay)
-
-        losses = []
-        test_losses = []
-        valid_losses = []
-        for epoch in range(num_iter):
-            self.model.zero_grad()
-            optimizer.zero_grad()
-            out = self.model(self.fea, self.adj)
-
-            self.loss = self.loss_fn(out[self.train_mask], self.label[self.train_mask])
-            test_loss = self.loss_fn(out[self.test_mask], self.label[self.test_mask])
-            valid_loss = self.loss_fn(out[self.val_mask], self.label[self.val_mask])
-            losses.append(self.loss.item())
-            test_losses.append(test_loss.item())
-            valid_losses.append(valid_loss.item())
-
-            self.loss.backward(retain_graph=True)   # backpropagation, compute gradients
-            optimizer.step()
-
-            if epoch % 200 == 0:
-                print(f'Epoch: {epoch:03d}, Training Loss: {self.loss:.4f}, Test Loss: {test_loss:.4f}, Valid Loss: {valid_loss:.4f}')
-
-        plt.plot(losses,'-')
-        plt.plot(test_losses,'-')
-        plt.plot(valid_losses,'-')
-        plt.xlabel('epoch')
-        plt.ylabel('losses')
-        plt.legend(['Train','Test', 'Valid'])
-        plt.title('Train vs Test vs Valid Losses with cost sensitive loss')
-
-
-    def predict(self):
-
-        out = self.model(self.fea, self.adj)
-        #detailed_out = out.tolist()
-        #print("len of detailed_out: {}".format(len(detailed_out)))
-        pred = out.argmax(dim=1)
-        #print("len of pred:{}".format(len(pred)))
-        #return pred
-        return out
-
-
-    def update_loss(self):
-
-        self.loss = self.loss_fn(self.predict(), self.y)
-
-
-class GAT(torch.nn.Module):
-    def __init__(self, hidden_channels, num_features):
-        super(GAT, self).__init__()
-        self.hidden_channels = hidden_channels
-        self.num_features = num_features
-        self.model = GAT_base(self.hidden_channels, self.num_features)
-
-    def fit(self, data, update_label, weight, learning_rate=1e-3, num_iter=50):
-        self.data      = data
-        #self.X         = torch.tensor(data.x[data.train_mask].reshape((-1, self.inputDim))).float()
-        self.y         = update_label[data.train_mask]
-        self.weight    = weight
-        self.loss_fn   = torch.nn.CrossEntropyLoss(weight=self.weight)
-        self.decay     = 5e-4
-        optimizer = torch.optim.Adam(self.model.parameters(),
-                                     lr=learning_rate,
-                                     weight_decay=self.decay)
-
-        losses = []
-        test_losses = []
-        valid_losses = []
-        for epoch in range(num_iter):
-            self.model.zero_grad()
-            optimizer.zero_grad()
-            out = self.model(data.x, data.edge_index)
-
-            self.loss = self.loss_fn(out[data.train_mask], update_label[data.train_mask])
-            test_loss = self.loss_fn(out[data.test_mask], update_label[data.test_mask])
-            valid_loss = self.loss_fn(out[data.val_mask], update_label[data.val_mask])
-            losses.append(self.loss.item())
-            test_losses.append(test_loss.item())
-            valid_losses.append(valid_loss.item())
-
-            self.loss.backward(retain_graph=True)   # backpropagation, compute gradients
-            optimizer.step()
-
-            if epoch % 50 == 0:
-                print(f'Epoch: {epoch:03d}, Training Loss: {self.loss:.4f}, Test Loss: {test_loss:.4f}, Valid Loss: {valid_loss:.4f}')
-
-        plt.plot(losses,'-')
-        plt.plot(test_losses,'-')
-        plt.plot(valid_losses,'-')
-        plt.xlabel('epoch')
-        plt.ylabel('losses')
-        plt.legend(['Train','Test', 'Valid'])
-        plt.title('Train vs Test vs Valid Losses with cost sensitive loss')
-
-
-    def predict(self, data):
-
-        out = self.model(data.x, data.edge_index)
-        #detailed_out = out.tolist()
-        #print("len of detailed_out: {}".format(len(detailed_out)))
-        pred = out.argmax(dim=1)
-        #print("len of pred:{}".format(len(pred)))
-        #return pred
-        return out
-
-
-    def update_loss(self):
-
-        self.loss = self.loss_fn(self.predict(self.data), self.y)
-
-
-class GIN(torch.nn.Module):
-    def __init__(self, hidden_channels, num_features):
-        super(GIN, self).__init__()
-        self.hidden_channels = hidden_channels
-        self.num_features = num_features
-        self.model = GIN_base(self.hidden_channels, self.num_features)
-
-    def fit(self, data, update_label, weight, learning_rate=1e-3, num_iter=50):
-        self.data      = data
-        #self.X         = torch.tensor(data.x[data.train_mask].reshape((-1, self.inputDim))).float()
-        self.y         = update_label[data.train_mask]
-        self.weight    = weight
-        self.loss_fn   = torch.nn.CrossEntropyLoss(weight=self.weight)
-        self.decay     = 5e-4
-        optimizer = torch.optim.Adam(self.model.parameters(),
-                                     lr=learning_rate,
-                                     weight_decay=self.decay)
-
-        losses = []
-        test_losses = []
-        valid_losses = []
-        for epoch in range(num_iter):
-            self.model.zero_grad()
-            optimizer.zero_grad()
-            out = self.model(data.x, data.edge_index)
-
-            self.loss = self.loss_fn(out[data.train_mask], update_label[data.train_mask])
-            test_loss = self.loss_fn(out[data.test_mask], update_label[data.test_mask])
-            valid_loss = self.loss_fn(out[data.val_mask], update_label[data.val_mask])
-            losses.append(self.loss.item())
-            test_losses.append(test_loss.item())
-            valid_losses.append(valid_loss.item())
-
-            self.loss.backward(retain_graph=True)   # backpropagation, compute gradients
-
-            optimizer.step()
-
-            if epoch % 50 == 0:
-                print(f'Epoch: {epoch:03d}, Training Loss: {self.loss:.4f}, Test Loss: {test_loss:.4f}, Valid Loss: {valid_loss:.4f}')
-
-        plt.plot(losses,'-')
-        plt.plot(test_losses,'-')
-        plt.plot(valid_losses,'-')
-        plt.xlabel('epoch')
-        plt.ylabel('losses')
-        plt.legend(['Train','Test', 'Valid'])
-        plt.title('Train vs Test vs Valid Losses with cost sensitive loss')
-
-
-    def predict(self, data):
-
-        out = self.model(data.x, data.edge_index)
-        #detailed_out = out.tolist()
-        #print("len of detailed_out: {}".format(len(detailed_out)))
-        pred = out.argmax(dim=1)
-        #print("len of pred:{}".format(len(pred)))
-        #return pred
-        return out
-
-
-    def update_loss(self):
-
-        self.loss = self.loss_fn(self.predict(self.data), self.y)
-
-
 class GCN_uncertainty_wrapper():
     def __init__(self, model, mode="exact_gcn", damp=1e-4, order=1):
-
-        self.model            = model
-
+        self.model = model
         training = []
         for i, flag in enumerate(model.data.train_mask.tolist()):
             if flag:
                 training.append(i)
         #print("training index:{}".format(training))
 
-        self.IF               = influence_function(model, train_index=training,
-                                                   mode=mode, damp=damp, order=order)
+        self.IF = influence_function(model, train_index=training, mode=mode, damp=damp, order=order)
 
-        self.LOBO_residuals   = []
+        self.LOBO_residuals = []
 
         for k in range(len(self.IF)):
             #print(k)
-            perturbed_models  = perturb_model_(self.model, self.IF[k])
+            perturbed_models = perturb_model_(self.model, self.IF[k])
 
             ####
             #perturbed_models  = DNN(**params)
@@ -752,13 +471,13 @@ class GCN_uncertainty_wrapper():
 
             del perturbed_models
 
-        self.LOBO_residuals   = np.squeeze(np.array(self.LOBO_residuals))
+        self.LOBO_residuals = np.squeeze(np.array(self.LOBO_residuals))
 
 
     def predict(self, data, update_label, coverage=0.95):
 
-        self.variable_preds_test   = []
-        self.variable_preds_valid  = []
+        self.variable_preds_test = []
+        self.variable_preds_valid = []
 
         test_index = []
         for i, flag in enumerate(data.test_mask.tolist()):
@@ -770,12 +489,12 @@ class GCN_uncertainty_wrapper():
             if flag:
                 val_index.append(i)
 
-        num_test_samples           = len(test_index)
-        num_valid_samples          = len(val_index)
+        num_test_samples = len(test_index)
+        num_valid_samples = len(val_index)
 
         for k in range(len(self.IF)):
             #print(k)
-            perturbed_models  = perturb_model_(self.model, self.IF[k])
+            perturbed_models = perturb_model_(self.model, self.IF[k])
 
             ####
             #perturbed_models  = DNN(**params)
