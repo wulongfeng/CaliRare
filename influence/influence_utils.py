@@ -137,7 +137,6 @@ def perturb_model_(model, perturb):
     """
 
     params            = []
-    NUM_SAMPLES       = model.X.shape[0]
 
     for param in model.parameters():
     
@@ -148,8 +147,9 @@ def perturb_model_(model, perturb):
     new_param_        = param_ - perturb
 
     # copy all model attributes
-
-    perturbed_model   = type(model)()
+    hidden_channels = model.hidden_channels
+    num_features = model.num_features
+    perturbed_model   = type(model)()(hidden_channels, num_features)
     
     new_model_dict    = dict.fromkeys(model.__dict__.keys())
     new_model_state   = collections.OrderedDict.fromkeys(model.state_dict().keys())
