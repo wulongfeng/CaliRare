@@ -1,12 +1,3 @@
-
-# Copyright (c) 2020, Ahmed M. Alaa
-# Licensed under the BSD 3-clause license (see LICENSE.txt)
-
-# ---------------------------------------------------------
-# Helper functions for influence functions' 
-# computation in Pytorch
-# ---------------------------------------------------------
-
 from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import

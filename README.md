@@ -14,5 +14,5 @@ To answer these questions, we start by investigating miscalibration in existing 
 
 ## Example to run CaliRare
 
-	bash example.sh
+	./example.sh
   

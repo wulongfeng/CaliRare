@@ -1,17 +1,8 @@
-
-
-# Copyright (c) 2020, Ahmed M. Alaa
-# Licensed under the BSD 3-clause license (see LICENSE.txt)
-
-# ---------------------------------------------------------
-# Helper functions and utilities for deep learning models
-# ---------------------------------------------------------
-
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score
 
-from utils.make_data import * 
+#from utils.make_data import *
 
 def plot_1D_uncertainty(results, Y_test, data_index):
     

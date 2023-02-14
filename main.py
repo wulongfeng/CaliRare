@@ -11,7 +11,6 @@ from torch_geometric.transforms import NormalizeFeatures
 
 from sklearn.metrics import recall_score, accuracy_score, f1_score
 from models.static import *
-from utils.performance import *
 from utils.preprocessing import *
 from utils.evaluate import *
 
