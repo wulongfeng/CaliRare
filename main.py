@@ -112,7 +112,7 @@ def main(args):
 
     num_fea = data.num_features
     print(num_fea)
-    params        = dict({"hidden_channels": 16, "num_features":num_fea})
+    params = dict({"hidden_channels": 16, "num_features": num_fea})
     GCN_model_16 = GCN(**params)
 
     print("training starts..")
@@ -129,14 +129,14 @@ def main(args):
     label = update_label[data.test_mask].tolist()
     majo_prob, majo_result, majo_label, mino_prob, mino_result, mino_label = splitCate(model_result, model_argmax, label)
 
-    ece_calibration_interval(model_result, model_argmax, label, 20)
-    ece_calibration_sample(model_result, model_argmax, label, 20)
-    ece_calibration_sample(majo_prob, majo_result, majo_label, 20)
-    ece_calibration_sample(mino_prob, mino_result, mino_label, 20)
-
+    ece = ece_calibration(model_result, model_argmax, label, 20)
+    ace = ace_calibration(model_result, model_argmax, label, 20)
+    ace_majo = ace_calibration(majo_prob, majo_result, majo_label, 20)
+    ace_mino = ace_calibration(mino_prob, mino_result, mino_label, 20)
+    print(f'ECE: {ece:.4f} \t ACE: {ace:.4f} \t ACE on the majority: {ace_majo:.4f} \t '
+          f'ACE on the minority: {ace_mino:.4f}')
 
     GJ_model_16 = GCN_uncertainty_wrapper(GCN_model_16, order=1, damp=1e-2)
-
     y_label_test, y_prob_test, y_pred_label_test, y_lower_test, y_upper_test, y_label_valid, y_prob_valid, y_pred_label_valid, y_lower_valid, y_upper_valid = GJ_model_16.predict(data, update_label, coverage=args.alpha)
     print()
     print("training with individual calibration..")
@@ -153,11 +153,12 @@ def main(args):
     label = update_label[data.test_mask].tolist()
     majo_prob, majo_result, majo_label, mino_prob, mino_result, mino_label = splitCate(model_result, model_argmax, label)
 
-    ece_calibration_interval(model_result, model_argmax, label, 20)
-    ece_calibration_sample(model_result, model_argmax, label, 20)
-    ece_calibration_sample(majo_prob, majo_result, majo_label, 20)
-    ece_calibration_sample(mino_prob, mino_result, mino_label, 20)
-
+    ece = ece_calibration(model_result, model_argmax, label, 20)
+    ace = ace_calibration(model_result, model_argmax, label, 20)
+    ace_majo = ace_calibration(majo_prob, majo_result, majo_label, 20)
+    ace_mino = ace_calibration(mino_prob, mino_result, mino_label, 20)
+    print(f'ECE: {ece:.4f} \t ACE: {ace:.4f} \t ACE on the majority: {ace_majo:.4f} \t '
+          f'ACE on the minority: {ace_mino:.4f}')
 
 if __name__ == "__main__":
     main(parse_args())

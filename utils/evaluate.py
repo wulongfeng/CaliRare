@@ -19,7 +19,7 @@ from utils.preprocessing import *
 import random
 import sys
 
-def ece_calibration_interval(result, prediction, label, bin_num):
+def ece_calibration(result, prediction, label, bin_num):
     assert len(result) == len(prediction)
     prob = []
     for i, pred_label in enumerate(prediction):
@@ -57,10 +57,10 @@ def ece_calibration_interval(result, prediction, label, bin_num):
         output_mino.append(groud_truth_1)
         #print("bin idx:{}, confidence: {:.4f}, and acc: {:.4f}, [{:.4f}, {:.4f}], [0:{}, 1:{}]".format(i, confi, accu, min_p, max_p, groud_truth_0, groud_truth_1))
 
+    return ece/len(prob)
+    #print("ECE is: {:.4f}".format(ece/len(prob)))
 
-    print("ECE is: {:.4f}".format(ece/len(prob)))
-
-def ece_calibration_sample(result, prediction, label, bin_num):
+def ace_calibration(result, prediction, label, bin_num):
     '''
     result is the detailed probability
     prediction is the predicted label for this specific sample
@@ -108,7 +108,8 @@ def ece_calibration_sample(result, prediction, label, bin_num):
         output_mino.append(groud_truth_1)
         # comment for less
         #print("bin idx:{}, confidence: {:.4f}, and acc: {:.4f}, [{:.4f}, {:.4f}], [0:{}, 1:{}]".format(i, confi, accu, min_p, max_p, groud_truth_0, groud_truth_1))
-    print("ECE is: {:.4f}".format(ece/len(prob)))
+    return ece/len(prob)
+    #print("ECE is: {:.4f}".format(ece/len(prob)))
 
 def train_GCN(model, data, update_label, weight, optimizer, criterion, learning_rate=1e-3, num_iter=50):
     model.train()
@@ -180,10 +181,8 @@ def train(GJ_model, data, update_label, sample_weight, learning_rate=1e-3, num_i
 
 def test_gcn(model, data, update_label):
     out = model(data.x, data.edge_index)
-    #detailed_out = out.tolist()
-    #print("len of detailed_out: {}".format(len(detailed_out)))
     pred = out.argmax(dim=1)
-    #print("len of pred:{}".format(len(pred)))
+
     train_acc = accuracy_score(update_label[data.train_mask].tolist(), pred[data.train_mask].tolist())
     test_acc = accuracy_score(update_label[data.test_mask].tolist(), pred[data.test_mask].tolist())
     val_acc = accuracy_score(update_label[data.val_mask].tolist(), pred[data.val_mask].tolist())
@@ -198,10 +197,8 @@ def test_gcn(model, data, update_label):
 
 def test(model, data, update_label):
     out = model.predict(data)
-    #detailed_out = out.tolist()
-    #print("len of detailed_out: {}".format(len(detailed_out)))
     pred = out.argmax(dim=1)
-    #print("len of pred:{}".format(len(pred)))
+
     train_acc = accuracy_score(update_label[data.train_mask].tolist(), pred[data.train_mask].tolist())
     test_acc = accuracy_score(update_label[data.test_mask].tolist(), pred[data.test_mask].tolist())
     val_acc = accuracy_score(update_label[data.val_mask].tolist(), pred[data.val_mask].tolist())
