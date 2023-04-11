@@ -43,13 +43,12 @@ def main(args):
         dataset = CitationFull(root='data/DBLP', name='DBLP', transform=NormalizeFeatures())
     elif args.dataset == 'FaceBook':
         dataset = FacebookPagePage(root='data/FacebookPagePage', transform=NormalizeFeatures())
-    elif args.dataset == 'Amazon_Photo':
-        dataset = Amazon(root='data_torch1.4/Amazon_photo', name='Photo', transform=NormalizeFeatures())
+
 
     print(50*'=')
     data = dataset[0]
     print(data)
-    if args.dataset in ['DBLP', 'FaceBook', 'Amazon_Photo']:
+    if args.dataset in ['DBLP', 'FaceBook']:
         samples = data.num_nodes
         train_set, test_set, val_set = dataset_split(args.seed, data, 20, 1000, 500, samples)
     elif args.dataset in ['Cora', 'PubMed', 'CiteSeer']:
