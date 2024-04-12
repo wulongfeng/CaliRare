@@ -1,6 +1,6 @@
 # CaliRare
 
-This is the implementation of our paper: Towards Reliable Rare Category Analysis on Graphs via Individual Calibration.
+This is the implementation of our paper: [Towards Reliable Rare Category Analysis on Graphs via Individual Calibration](https://dl.acm.org/doi/abs/10.1145/3580305.3599525).
 
 
 ## Introduction
