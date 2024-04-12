@@ -15,4 +15,15 @@ To answer these questions, we start by investigating miscalibration in existing 
 ## Example to run CaliRare
 
 	./example.sh
-  
+ 
+## Citation
+If you find it useful, please cite our paper. Thank you!
+
+	@inproceedings{wu2023towards,
+  		title={Towards reliable rare category analysis on graphs via individual calibration},
+ 		author={Wu, Longfeng and Lei, Bowen and Xu, Dongkuan and Zhou, Dawei},
+  		booktitle={Proceedings of the 29th ACM SIGKDD Conference on Knowledge Discovery and Data Mining},
+  		pages={2629--2638},
+  		year={2023}
+	}
+ 
